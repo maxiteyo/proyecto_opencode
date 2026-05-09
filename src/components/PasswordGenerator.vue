@@ -24,6 +24,8 @@ const error = ref('')
 const copied = ref(false)
 const historyOpen = ref(false)
 const revealedIds = ref<Set<string>>(new Set())
+const historyPageSize = 5
+const historyShown = ref(historyPageSize)
 let copyTimer: ReturnType<typeof setTimeout>
 
 const passwordOptions = ref<PasswordOptions>(loadPasswordOptions())
@@ -161,6 +163,11 @@ function showCopied() {
   copied.value = true
   clearTimeout(copyTimer)
   copyTimer = setTimeout(() => { copied.value = false }, 2000)
+}
+
+function toggleHistory() {
+  historyOpen.value = !historyOpen.value
+  historyShown.value = historyPageSize
 }
 
 function toggleReveal(id: string) {
@@ -370,7 +377,7 @@ generate()
       </template>
 
       <div class="history-section">
-        <button class="history-toggle" @click="historyOpen = !historyOpen">
+        <button class="history-toggle" @click="toggleHistory">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
           </svg>
@@ -386,7 +393,7 @@ generate()
             Aún no hay contraseñas generadas
           </div>
 
-          <div v-for="entry in history" :key="entry.id" class="history-item">
+          <div v-for="entry in history.slice(0, historyShown)" :key="entry.id" class="history-item">
             <div class="history-item-row">
               <span class="history-password" @click="toggleReveal(entry.id)">
                 {{ revealedIds.has(entry.id) ? entry.password : maskPassword(entry.password) }}
@@ -416,6 +423,10 @@ generate()
             </div>
             <div class="history-config">{{ entry.config }}</div>
           </div>
+
+          <button v-if="history.length > historyShown" class="show-more-btn" @click="historyShown += historyPageSize">
+            Mostrar más ({{ history.length - historyShown }} restantes)
+          </button>
 
           <button v-if="history.length > 0" class="clear-btn" @click="clearHistory">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1040,6 +1051,26 @@ generate()
   margin-top: 2px;
   opacity: 0.8;
   font-family: var(--mono);
+}
+
+.show-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.show-more-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
 }
 
 .clear-btn {
