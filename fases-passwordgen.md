@@ -58,11 +58,11 @@
 
 ## Fase 5 — Botones de Acción
 
-- [ ] Botón **"Generar"**: regenera contraseña con configuración actual
-- [ ] Botón **"Copiar"**: copia al portapapeles con `navigator.clipboard.writeText()`
-- [ ] Feedback visual al copiar (tooltip "Copiado!" o animación)
-- [ ] Atajo de teclado (Ctrl+G para generar, Ctrl+C para copiar)
-- [ ] Botón **"Regenerar"** automático al cambiar opciones (opcional, toggle)
+- [x] Botón **"Generar"**: regenera contraseña con configuración actual
+- [x] Botón **"Copiar"**: copia al portapapeles con `navigator.clipboard.writeText()`
+- [x] Feedback visual al copiar (tooltip "Copiado!" o animación)
+- [x] Atajo de teclado (Ctrl+G para generar, Ctrl+C para copiar)
+- [x] Botón **"Regenerar"** automático al cambiar opciones (opcional, toggle)
 
 ---
 

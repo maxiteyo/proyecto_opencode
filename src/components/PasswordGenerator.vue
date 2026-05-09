@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { usePasswordGenerator } from '../composables/usePasswordGenerator'
 import { usePassphraseGenerator } from '../composables/usePassphraseGenerator'
 import type { PasswordOptions } from '../types/password'
@@ -17,6 +17,8 @@ const MODE_STORAGE_KEY = 'password-gen-mode'
 const mode = ref<Mode>(loadMode())
 const output = ref('')
 const error = ref('')
+const copied = ref(false)
+let copyTimer: ReturnType<typeof setTimeout>
 
 const passwordOptions = ref<PasswordOptions>(loadPasswordOptions())
 const passphraseOptions = ref<PassphraseOptions>(loadPassphraseOptions())
@@ -121,7 +123,27 @@ async function copyOutput() {
     document.execCommand('copy')
     document.body.removeChild(el)
   }
+  copied.value = true
+  clearTimeout(copyTimer)
+  copyTimer = setTimeout(() => { copied.value = false }, 1500)
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.ctrlKey && e.key === 'g') {
+    e.preventDefault()
+    generate()
+  }
+  if ((e.ctrlKey && e.key === 'c') && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault()
+    copyOutput()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  clearTimeout(copyTimer)
+})
 
 watch(passphraseOptions, generate, { deep: true })
 
@@ -177,6 +199,7 @@ generate()
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
+            <span v-if="copied" class="copy-tooltip">Copiado!</span>
           </button>
         </div>
       </div>
@@ -188,6 +211,8 @@ generate()
         </svg>
         {{ mode === 'password' ? 'Generar Contraseña' : 'Generar Passphrase' }}
       </button>
+
+      <p class="shortcut-hint">Ctrl+G para generar · Ctrl+C para copiar</p>
 
       <div v-if="error" class="error-message">{{ error }}</div>
 
@@ -400,6 +425,7 @@ generate()
   color: var(--text);
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
 }
 
 .copy-btn:hover {
@@ -656,5 +682,43 @@ generate()
   background: var(--accent);
   border-color: var(--accent);
   color: white;
+}
+
+.copy-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-h);
+  color: var(--bg);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  animation: fadeIn 0.15s ease;
+  pointer-events: none;
+}
+
+.copy-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text-h);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.shortcut-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+  margin: -12px 0 20px;
+  opacity: 0.7;
 }
 </style>
