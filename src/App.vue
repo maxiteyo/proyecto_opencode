@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import PasswordGenerator from './components/PasswordGenerator.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <PasswordGenerator />
 </template>

@@ -8,30 +8,30 @@
 
 ## Fase 1 — Estructura + Auto-deploy
 
-- [ ] Inicializar proyecto con `npm create vite@latest` (Vue 3 + TypeScript)
-- [ ] Configurar linter (ESLint + Prettier)
-- [ ] Estructura de carpetas:
+- [x] Inicializar proyecto con `npm create vite@latest` (Vue 3 + TypeScript)
+- [x] Configurar linter (ESLint + Prettier)
+- [x] Estructura de carpetas:
   - `src/components/`
   - `src/composables/`
   - `src/stores/`
   - `src/assets/`
   - `src/types/`
-- [ ] Configurar auto-deploy con GitHub Pages (`.github/workflows/deploy.yml`)
-- [ ] README con instrucciones de desarrollo y link a demo
+- [x] Configurar auto-deploy con GitHub Pages (`.github/workflows/deploy.yml`)
+- [x] README con instrucciones de desarrollo y link a demo
 
 ---
 
 ## Fase 2 — Generador de Contraseñas (estilo BitWarden)
 
-- [ ] Implementar núcleo de generación usando `crypto.getRandomValues()` (CSPRNG)
-- [ ] Lógica de selección de caracteres:
+- [x] Implementar núcleo de generación usando `crypto.getRandomValues()` (CSPRNG)
+- [x] Lógica de selección de caracteres:
   - Mayúsculas (A-Z)
   - Minúsculas (a-z)
   - Números (0-9)
   - Símbolos (!@#$%^&*()_+-=[]{}|;:',.<>?/~`)
-- [ ] Garantizar al menos un carácter de cada tipo seleccionado
-- [ ] Mostrar contraseña generada en pantalla
-- [ ] Componente de vista previa tipo BitWarden (input con icono de candado)
+- [x] Garantizar al menos un carácter de cada tipo seleccionado
+- [x] Mostrar contraseña generada en pantalla
+- [x] Componente de vista previa tipo BitWarden (input con icono de candado)
 
 ---
 
