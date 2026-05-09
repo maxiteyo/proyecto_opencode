@@ -2,11 +2,15 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { usePasswordGenerator } from '../composables/usePasswordGenerator'
 import { usePassphraseGenerator } from '../composables/usePassphraseGenerator'
+import { useTheme } from '../composables/useTheme'
+import { usePasswordHistory } from '../composables/usePasswordHistory'
 import type { PasswordOptions } from '../types/password'
 import type { PassphraseOptions } from '../composables/usePassphraseGenerator'
 
 const { generatePassword } = usePasswordGenerator()
 const { generatePassphrase } = usePassphraseGenerator()
+const { currentTheme, setTheme } = useTheme()
+const { history, addEntry, clearHistory, removeEntry } = usePasswordHistory()
 
 type Mode = 'password' | 'passphrase'
 
@@ -18,6 +22,8 @@ const mode = ref<Mode>(loadMode())
 const output = ref('')
 const error = ref('')
 const copied = ref(false)
+const historyOpen = ref(false)
+const revealedIds = ref<Set<string>>(new Set())
 let copyTimer: ReturnType<typeof setTimeout>
 
 const passwordOptions = ref<PasswordOptions>(loadPasswordOptions())
@@ -95,6 +101,24 @@ function validate(): boolean {
   return true
 }
 
+function getConfigSummary(): string {
+  if (mode.value === 'password') {
+    const parts: string[] = []
+    if (passwordOptions.value.includeUppercase) parts.push('A-Z')
+    if (passwordOptions.value.includeLowercase) parts.push('a-z')
+    if (passwordOptions.value.includeNumbers) parts.push('0-9')
+    if (passwordOptions.value.includeSymbols) parts.push('!@#')
+    if (passwordOptions.value.excludeAmbiguous) parts.push('no ambig')
+    return `[${parts.join(', ')}] len:${passwordOptions.value.length}`
+  }
+  const parts: string[] = []
+  parts.push(`${passphraseOptions.value.wordCount} palabras`)
+  parts.push(`sep:${passphraseOptions.value.separator === ' ' ? 'space' : passphraseOptions.value.separator}`)
+  if (passphraseOptions.value.capitalize) parts.push('Cap')
+  if (passphraseOptions.value.appendNumber) parts.push('+num')
+  return `[${parts.join(', ')}]`
+}
+
 function generate() {
   if (!validate()) return
   if (mode.value === 'password') {
@@ -104,6 +128,7 @@ function generate() {
     output.value = generatePassphrase(passphraseOptions.value)
     savePassphraseOptions()
   }
+  addEntry(output.value, mode.value, getConfigSummary())
 }
 
 function switchMode(newMode: Mode) {
@@ -112,19 +137,23 @@ function switchMode(newMode: Mode) {
   generate()
 }
 
-async function copyOutput() {
+async function copyText(text: string) {
   try {
-    await navigator.clipboard.writeText(output.value)
+    await navigator.clipboard.writeText(text)
   } catch {
     try {
       const el = document.createElement('textarea')
-      el.value = output.value
+      el.value = text
       document.body.appendChild(el)
       el.select()
       document.execCommand('copy')
       document.body.removeChild(el)
     } catch { /* ignore */ }
   }
+}
+
+async function copyOutput() {
+  await copyText(output.value)
   showCopied()
 }
 
@@ -132,6 +161,17 @@ function showCopied() {
   copied.value = true
   clearTimeout(copyTimer)
   copyTimer = setTimeout(() => { copied.value = false }, 2000)
+}
+
+function toggleReveal(id: string) {
+  const s = new Set(revealedIds.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  revealedIds.value = s
+}
+
+function maskPassword(pwd: string): string {
+  return '•'.repeat(Math.min(pwd.length, 20))
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -159,6 +199,27 @@ generate()
 <template>
   <div class="password-generator">
     <div class="card">
+      <div class="theme-switcher">
+        <button :class="['theme-btn', { active: currentTheme === 'light' }]" title="Claro" @click="setTheme('light')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
+        <button :class="['theme-btn', { active: currentTheme === 'dark' }]" title="Oscuro" @click="setTheme('dark')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+        <button :class="['theme-btn', { active: currentTheme === 'system' }]" title="Sistema" @click="setTheme('system')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+        </button>
+      </div>
+
       <div class="card-header">
         <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -307,6 +368,63 @@ generate()
           </label>
         </div>
       </template>
+
+      <div class="history-section">
+        <button class="history-toggle" @click="historyOpen = !historyOpen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+          </svg>
+          Historial
+          <span class="history-count">{{ history.length }}</span>
+          <svg :class="['chevron', { open: historyOpen }]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        <div v-if="historyOpen" class="history-list">
+          <div v-if="history.length === 0" class="history-empty">
+            Aún no hay contraseñas generadas
+          </div>
+
+          <div v-for="entry in history" :key="entry.id" class="history-item">
+            <div class="history-item-row">
+              <span class="history-password" @click="toggleReveal(entry.id)">
+                {{ revealedIds.has(entry.id) ? entry.password : maskPassword(entry.password) }}
+              </span>
+              <div class="history-actions">
+                <button class="history-btn" title="Revelar" @click="toggleReveal(entry.id)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+                <button class="history-btn" title="Copiar" @click="copyText(entry.password); showCopied()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+                <button class="history-btn history-btn--delete" title="Eliminar" @click="removeEntry(entry.id)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="history-meta">
+              <span class="history-mode">{{ entry.mode === 'password' ? 'Contraseña' : 'Passphrase' }}</span>
+              <span class="history-date">{{ entry.date }}</span>
+            </div>
+            <div class="history-config">{{ entry.config }}</div>
+          </div>
+
+          <button v-if="history.length > 0" class="clear-btn" @click="clearHistory">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Limpiar historial
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -315,9 +433,9 @@ generate()
 .password-generator {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
-  padding: 20px;
+  padding: 40px 20px;
   box-sizing: border-box;
 }
 
@@ -329,6 +447,43 @@ generate()
   width: 100%;
   max-width: 480px;
   box-shadow: var(--card-shadow);
+}
+
+.theme-switcher {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.theme-btn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.theme-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .card-header {
@@ -735,5 +890,189 @@ generate()
   color: var(--text);
   margin: -12px 0 20px;
   opacity: 0.7;
+}
+
+.history-section {
+  margin-top: 28px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-toggle:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.history-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.history-count {
+  margin-left: auto;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.chevron {
+  transition: transform 0.2s;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.history-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-empty {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+  padding: 20px;
+}
+
+.history-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.history-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-password {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-h);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+  transition: color 0.15s;
+}
+
+.history-password:hover {
+  color: var(--accent);
+}
+
+.history-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.history-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.history-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.history-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.history-btn--delete:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.history-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.history-mode {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.history-date {
+  color: var(--text);
+}
+
+.history-config {
+  font-size: 11px;
+  color: var(--text);
+  margin-top: 2px;
+  opacity: 0.8;
+  font-family: var(--mono);
+}
+
+.clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.clear-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.clear-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+@media (prefers-color-scheme: dark) {
+  .clear-btn:hover {
+    background: #451a1a;
+    border-color: #7f1d1d;
+  }
 }
 </style>

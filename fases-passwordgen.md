@@ -68,10 +68,10 @@
 
 ## Fase 6 — Temas Claro/Oscuro + Historial
 
-- [ ] Implementar theme switcher (claro / oscuro / sistema)
-- [ ] Usar variables CSS para colores
-- [ ] Persistir preferencia de tema en `localStorage`
-- [ ] **Historial local** de contraseñas generadas:
+- [x] Implementar theme switcher (claro / oscuro / sistema)
+- [x] Usar variables CSS para colores
+- [x] Persistir preferencia de tema en `localStorage`
+- [x] **Historial local** de contraseñas generadas:
   - Guardar en `localStorage` (máximo 50 entradas)
   - Mostrar lista con: contraseña (enmascarada), fecha, configuración usada
   - Botón para limpiar historial
