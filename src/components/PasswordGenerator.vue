@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { usePasswordGenerator } from '../composables/usePasswordGenerator'
 import { usePassphraseGenerator } from '../composables/usePassphraseGenerator'
 import { useTheme } from '../composables/useTheme'
@@ -181,6 +181,63 @@ function maskPassword(pwd: string): string {
   return '•'.repeat(Math.min(pwd.length, 20))
 }
 
+const strengthBits = computed(() => {
+  if (!output.value) return 0
+  if (mode.value === 'password') {
+    let poolSize = 0
+    if (passwordOptions.value.includeUppercase) poolSize += 26
+    if (passwordOptions.value.includeLowercase) poolSize += 26
+    if (passwordOptions.value.includeNumbers) poolSize += 10
+    if (passwordOptions.value.includeSymbols) poolSize += 30
+    return Math.round(Math.log2(poolSize) * output.value.length)
+  }
+  return Math.round(passphraseOptions.value.wordCount * Math.log2(700))
+})
+
+const strengthLabel = computed(() => {
+  const bits = strengthBits.value
+  if (bits < 40) return 'Débil'
+  if (bits < 60) return 'Regular'
+  if (bits < 80) return 'Buena'
+  if (bits < 100) return 'Fuerte'
+  return 'Muy fuerte'
+})
+
+const strengthPercent = computed(() => Math.min(100, (strengthBits.value / 120) * 100))
+
+const strengthColor = computed(() => {
+  const bits = strengthBits.value
+  if (bits < 40) return '#ef4444'
+  if (bits < 60) return '#f59e0b'
+  if (bits < 80) return '#22c55e'
+  if (bits < 100) return '#16a34a'
+  return '#6366f1'
+})
+
+function exportCSV() {
+  const headers = ['Contraseña', 'Modo', 'Configuración', 'Fecha']
+  const rows = history.value.map((e) =>
+    [e.password, e.mode, e.config, e.date].map((v) => `"${v.replace(/"/g, '""')}"`).join(',')
+  )
+  const csv = [headers.join(','), ...rows].join('\n')
+  downloadFile(csv, 'historial-contraseñas.csv', 'text/csv')
+}
+
+function exportJSON() {
+  const json = JSON.stringify(history.value, null, 2)
+  downloadFile(json, 'historial-contraseñas.json', 'application/json')
+}
+
+function downloadFile(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function onKeydown(e: KeyboardEvent) {
   if (e.ctrlKey && e.key === 'g') {
     e.preventDefault()
@@ -278,6 +335,16 @@ generate()
             </svg>
             <span v-if="copied" class="copy-tooltip">Copiado!</span>
           </button>
+        </div>
+      </div>
+
+      <div class="strength-bar-container">
+        <div class="strength-bar-track">
+          <div class="strength-bar-fill" :style="{ width: strengthPercent + '%', backgroundColor: strengthColor }"></div>
+        </div>
+        <div class="strength-info">
+          <span class="strength-label" :style="{ color: strengthColor }">{{ strengthLabel }}</span>
+          <span class="strength-bits">{{ strengthBits }} bits</span>
         </div>
       </div>
 
@@ -429,6 +496,21 @@ generate()
           <button v-if="history.length > historyShown" class="show-more-btn" @click="historyShown += historyPageSize">
             Mostrar más ({{ history.length - historyShown }} restantes)
           </button>
+
+          <div v-if="history.length > 0" class="export-buttons">
+            <button class="export-btn" @click="exportCSV">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Exportar CSV
+            </button>
+            <button class="export-btn" @click="exportJSON">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Exportar JSON
+            </button>
+          </div>
 
           <button v-if="history.length > 0" class="clear-btn" @click="clearHistory">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1122,5 +1204,72 @@ generate()
 .reveal-leave-to {
   opacity: 0;
   transform: translateY(4px);
+}
+
+.strength-bar-container {
+  margin-bottom: 16px;
+}
+
+.strength-bar-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.strength-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.strength-label {
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.strength-bits {
+  opacity: 0.6;
+  color: var(--text);
+}
+
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.export-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.export-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 </style>

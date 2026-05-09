@@ -87,7 +87,5 @@
 
 ## Bonus (post-MVP)
 
-- [ ] Indicador visual de entropía / fortaleza
-- [ ] Exportar historial a CSV/JSON
-- [ ] Generar múltiples contraseñas a la vez
-- [ ] PWA para uso offline
+- [x] Indicador visual de entropía / fortaleza
+- [x] Exportar historial a CSV/JSON
