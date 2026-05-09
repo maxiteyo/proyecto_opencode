@@ -116,16 +116,22 @@ async function copyOutput() {
   try {
     await navigator.clipboard.writeText(output.value)
   } catch {
-    const el = document.createElement('textarea')
-    el.value = output.value
-    document.body.appendChild(el)
-    el.select()
-    document.execCommand('copy')
-    document.body.removeChild(el)
+    try {
+      const el = document.createElement('textarea')
+      el.value = output.value
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    } catch { /* ignore */ }
   }
+  showCopied()
+}
+
+function showCopied() {
   copied.value = true
   clearTimeout(copyTimer)
-  copyTimer = setTimeout(() => { copied.value = false }, 1500)
+  copyTimer = setTimeout(() => { copied.value = false }, 2000)
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -191,13 +197,16 @@ generate()
             @click="($event.target as HTMLInputElement).select()"
           />
           <button
-            class="copy-btn"
+            :class="['copy-btn', { copied: copied }]"
             title="Copiar al portapapeles"
             @click="copyOutput"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-if="!copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
             </svg>
             <span v-if="copied" class="copy-tooltip">Copiado!</span>
           </button>
@@ -432,6 +441,12 @@ generate()
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-bg);
+}
+
+.copy-btn.copied {
+  border-color: #22c55e;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .copy-btn svg {
