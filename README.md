@@ -111,12 +111,4 @@ src/
 
 ---
 
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor, abrí un *issue* para discutir cambios importantes antes de enviar un PR.
-
----
-
-## 📄 Licencia
-
-[MIT](LICENSE)
+> 💡 Este proyecto fue mi primera prueba utilizando **Opencode** por completo — un asistente de IA para ingeniería de software que opera desde la terminal. Todo el código, desde el scaffold inicial hasta la última funcionalidad, fue generado y gestionado mediante Opencode.
