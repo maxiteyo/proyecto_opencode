@@ -395,9 +395,11 @@ generate()
 
           <div v-for="entry in history.slice(0, historyShown)" :key="entry.id" class="history-item">
             <div class="history-item-row">
-              <span class="history-password" @click="toggleReveal(entry.id)">
-                {{ revealedIds.has(entry.id) ? entry.password : maskPassword(entry.password) }}
-              </span>
+              <Transition name="reveal" mode="out-in">
+                <span :key="entry.id + '-' + revealedIds.has(entry.id)" class="history-password" @click="toggleReveal(entry.id)">
+                  {{ revealedIds.has(entry.id) ? entry.password : maskPassword(entry.password) }}
+                </span>
+              </Transition>
               <div class="history-actions">
                 <button class="history-btn" title="Revelar" @click="toggleReveal(entry.id)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1105,5 +1107,20 @@ generate()
     background: #451a1a;
     border-color: #7f1d1d;
   }
+}
+
+.reveal-enter-active,
+.reveal-leave-active {
+  transition: all 0.2s ease;
+}
+
+.reveal-enter-from {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.reveal-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 </style>

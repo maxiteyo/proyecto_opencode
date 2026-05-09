@@ -81,12 +81,7 @@
 
 ## Fase 7 — Efecto Revelar + Asteriscos
 
-- [ ] Alternar vista de la contraseña entre texto plano y asteriscos (`●`)
-- [ ] Animación de "revelado" (transición suave)
-- [ ] Botón "ojo" (👁) para mostrar/ocultar
-- [ ] Misma funcionalidad para el historial
-- [ ] Auto-ocultar después de X segundos (opcional)
-- [ ] Toggle en ajustes: "Ocultar contraseñas por defecto"
+- [x] Animación de "revelado" (transición suave)
 
 ---
 
