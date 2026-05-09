@@ -47,12 +47,12 @@
 
 ## Fase 4 — Modo Passphrase (diccionario)
 
-- [ ] Cargar diccionario de palabras en español/inglés
-- [ ] Input para elegir cantidad de palabras (2–12)
-- [ ] Opción de separador (guión, espacio, punto, etc.)
-- [ ] Opción de capitalizar primera letra de cada palabra
-- [ ] Opción de agregar número aleatorio al final
-- [ ] Mostrar passphrase generada en mismo formato que contraseña normal
+- [x] Cargar diccionario de palabras en español/inglés
+- [x] Input para elegir cantidad de palabras (2–12)
+- [x] Opción de separador (guión, espacio, punto, etc.)
+- [x] Opción de capitalizar primera letra de cada palabra
+- [x] Opción de agregar número aleatorio al final
+- [x] Mostrar passphrase generada en mismo formato que contraseña normal
 
 ---
 
