@@ -37,11 +37,11 @@
 
 ## Fase 3 — Opciones de Personalización
 
-- [ ] **Checkboxes** para activar/desactivar: números, símbolos, mayúsculas, minúsculas
-- [ ] **Slider o input numérico** para longitud (rango 4–128)
-- [ ] **Exclusión de caracteres ambiguos** (0/O, 1/l/I, etc.)
-- [ ] Validación: mostrar error si longitud es insuficiente para tipos seleccionados
-- [ ] Almacenar preferencias en `localStorage`
+- [x] **Checkboxes** para activar/desactivar: números, símbolos, mayúsculas, minúsculas
+- [x] **Slider o input numérico** para longitud (rango 4–128)
+- [x] **Exclusión de caracteres ambiguos** (0/O, 1/l/I, etc.)
+- [x] Validación: mostrar error si longitud es insuficiente para tipos seleccionados
+- [x] Almacenar preferencias en `localStorage`
 
 ---
 

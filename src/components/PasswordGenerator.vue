@@ -5,19 +5,64 @@ import type { PasswordOptions } from '../types/password'
 
 const { generatePassword } = usePasswordGenerator()
 
-const password = ref('P@ssw0rd!')
+const STORAGE_KEY = 'password-generator-options'
 
-const options = ref<PasswordOptions>({
-  length: 20,
-  includeUppercase: true,
-  includeLowercase: true,
-  includeNumbers: true,
-  includeSymbols: true,
-  excludeAmbiguous: false,
-})
+const password = ref('P@ssw0rd!')
+const error = ref('')
+
+const options = ref<PasswordOptions>(loadOptions())
+
+function loadOptions(): PasswordOptions {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) return { ...defaultOptions(), ...JSON.parse(stored) }
+  } catch { /* ignore */ }
+  return defaultOptions()
+}
+
+function defaultOptions(): PasswordOptions {
+  return {
+    length: 20,
+    includeUppercase: true,
+    includeLowercase: true,
+    includeNumbers: true,
+    includeSymbols: true,
+    excludeAmbiguous: false,
+  }
+}
+
+function saveOptions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(options.value))
+  } catch { /* ignore */ }
+}
+
+function activeSetsCount(): number {
+  let count = 0
+  if (options.value.includeUppercase) count++
+  if (options.value.includeLowercase) count++
+  if (options.value.includeNumbers) count++
+  if (options.value.includeSymbols) count++
+  return count
+}
+
+function validate(): boolean {
+  if (activeSetsCount() === 0) {
+    error.value = 'Selecciona al menos un tipo de carácter'
+    return false
+  }
+  if (options.value.length < activeSetsCount()) {
+    error.value = `La longitud mínima es ${activeSetsCount()} para los tipos seleccionados`
+    return false
+  }
+  error.value = ''
+  return true
+}
 
 function generate() {
+  if (!validate()) return
   password.value = generatePassword(options.value)
+  saveOptions()
 }
 
 async function copyPassword() {
@@ -77,6 +122,8 @@ generate()
         </svg>
         Generar Nueva Contraseña
       </button>
+
+      <div v-if="error" class="error-message">{{ error }}</div>
 
       <div class="options">
         <label class="option">
@@ -371,5 +418,23 @@ generate()
   font-size: 12px;
   color: var(--text);
   margin-top: 6px;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 13px;
+  text-align: center;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  margin-bottom: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .error-message {
+    border-color: #7f1d1d;
+    background: #451a1a;
+  }
 }
 </style>
